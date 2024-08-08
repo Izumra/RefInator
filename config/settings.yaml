@@ -1,0 +1,31 @@
+folder_path: uploads/mark/BotConstructor
+exclusions:
+  extensions:
+    - .mod
+    - .sum
+    - .gitignore
+    - .proto
+    - .json
+    - .js
+    - .scss 
+    - .html
+    - .git
+  files:
+    - uploads/mark/BotConstructor/gen/user/account_grpc.pb.go
+    - uploads/mark/BotConstructor/gen/user/account.pb.go
+    - uploads/mark/BotConstructor/gen/user/auth_grpc.pb.go
+    - uploads/mark/BotConstructor/gen/user/auth.pb.go
+  folders:
+    - uploads/mark/BotConstructor/.git
+    - uploads/mark/BotConstructor/client/dist/node_modules
+    - uploads/mark/BotConstructor/client/dist
+changes:
+  classes: 
+    - LopngPlerUIView_ThorfApplic
+  funcs:
+    - Run
+    - AddUser
+  enums:
+    - CodingKeys
+  structs:
+    - PanelService
