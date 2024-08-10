@@ -2,15 +2,30 @@ package app
 
 import (
 	"bufio"
+	"errors"
+	"io"
 	"io/fs"
 	"log"
+	"math/rand/v2"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	configparser "github.com/Izumra/RefInator/utils/config_parser"
 	"github.com/brianvoe/gofakeit/v7"
 )
+
+var (
+	ErrNotInsertions = errors.New("Нет текстов для вставки")
+	ErrManyTries     = errors.New("Слишком много попыток выборки текста для ставки, попробуйте перейти к следующему файлу")
+)
+
+type Insertion struct {
+	text        string
+	fileRepeats int
+	maxRepeats  int
+}
 
 type Changes struct {
 	Classes map[string]string `yaml:"classes"`
@@ -23,6 +38,7 @@ type RefInator struct {
 	excExts    map[string]bool
 	excFiles   map[string]bool
 	excFolders []string
+	insertions []Insertion
 	changes    Changes
 }
 
@@ -66,10 +82,22 @@ func New(cfg configparser.Config) *RefInator {
 
 	refInator.changes = changes
 
+	insertions := make([]Insertion, len(cfg.Insertions))
+	for ind, code := range cfg.Insertions {
+		insertion := Insertion{}
+		insertion.text = code + "\n"
+
+		insertions[ind] = insertion
+	}
+
+	refInator.insertions = insertions
+
 	return refInator
 }
 
 func (r *RefInator) Refactor(folderPath string) error {
+	regexp := regexp.MustCompile(`func .*\(.*\).*{`)
+	idInsertion, errChooseInsertion := r.chooseRandomInsertion()
 	return filepath.WalkDir(folderPath, func(path string, d fs.DirEntry, err error) error {
 		for _, folder := range r.excFolders {
 			if strings.HasPrefix(path, folder) {
@@ -90,6 +118,14 @@ func (r *RefInator) Refactor(folderPath string) error {
 				return nil
 			}
 
+			newName := gofakeit.AppName() + ext
+			pathWithoutFileName, _ := strings.CutSuffix(afterPath, "/"+d.Name())
+			path = folderPath + pathWithoutFileName + "/" + newName
+			err = os.Rename(folderPath+afterPath, path)
+			if err != nil {
+				log.Println(err)
+			}
+
 			fileReader, err := os.Open(path)
 			if err != nil {
 				log.Println(err)
@@ -102,7 +138,11 @@ func (r *RefInator) Refactor(folderPath string) error {
 
 			for scanner.Scan() {
 				unchanged_line := scanner.Text()
-				line := r.changeNamesWorker(unchanged_line) + "\n"
+				line := r.changeNamesWorker(unchanged_line)
+				if unchanged_line != line {
+					log.Printf("\n\nИзменение!!!\nФайл: %s\nИзменилась строка под номером: %d\nИзначальная строка:\n%s\nИзмененная строка:\n%s\n\n", path, len(lines)+1, unchanged_line, line)
+				}
+				line += "\n"
 
 				lines = append(lines, line)
 			}
@@ -122,19 +162,33 @@ func (r *RefInator) Refactor(folderPath string) error {
 			writer := bufio.NewWriter(fileWriter)
 
 			for i := range lines {
+				if errChooseInsertion == nil && i != 0 {
+					if regexp.FindString(lines[i-1]) != "" {
+						if _, err := writer.WriteString(r.insertions[idInsertion].text); err == nil {
+							r.insertions[idInsertion].fileRepeats++
+							r.insertions[idInsertion].maxRepeats++
+
+							log.Printf("\n\nВставка!!!\nФайл: %s\nВставленный текст: \n%s\n\n", path, r.insertions[idInsertion].text)
+
+							idInsertion, errChooseInsertion = r.chooseRandomInsertion()
+
+						}
+					}
+				}
+
 				if _, err := writer.WriteString(lines[i]); err != nil {
 					log.Println(err)
-					return nil
 				}
 			}
 			writer.Flush()
 			fileWriter.Close()
 
-			newName := gofakeit.AppName() + ext
-			pathWithoutFileName, _ := strings.CutSuffix(afterPath, "/"+d.Name())
-			err = os.Rename(folderPath+afterPath, folderPath+pathWithoutFileName+"/"+newName)
-			if err != nil {
-				log.Println(err)
+			for idx := range r.insertions {
+				r.insertions[idx].fileRepeats = 0
+			}
+
+			if errors.Is(errChooseInsertion, ErrNotInsertions) {
+				idInsertion, errChooseInsertion = r.chooseRandomInsertion()
 			}
 		}
 
@@ -142,8 +196,33 @@ func (r *RefInator) Refactor(folderPath string) error {
 	})
 }
 
+func (r *RefInator) chooseRandomInsertion() (int, error) {
+	tries := 0
+
+	var insertion Insertion
+	for len(r.insertions) != 0 {
+		randomInsertion := rand.IntN(len(r.insertions))
+		insertion = r.insertions[randomInsertion]
+
+		if insertion.maxRepeats == 9 {
+			r.insertions = append(r.insertions[:randomInsertion], r.insertions[randomInsertion+1:]...)
+			continue
+		} else if insertion.fileRepeats == 3 {
+			tries++
+			if tries == 10 {
+				return -1, ErrManyTries
+			}
+
+			continue
+		}
+
+		return randomInsertion, nil
+	}
+
+	return -1, ErrNotInsertions
+}
+
 func (r *RefInator) changeNamesWorker(line string) string {
-	line_older := line
 
 	for class := range r.changes.Classes {
 		if strings.Contains(line, class) {
@@ -169,9 +248,57 @@ func (r *RefInator) changeNamesWorker(line string) string {
 		}
 	}
 
-	if line_older != line {
-		log.Println(line_older, "\nChanged line: ", line)
+	return line
+}
+
+func (r *RefInator) MakeFolderCopy(folderPath string) error {
+	copyPath := folderPath + "_copy"
+	err := os.Mkdir(copyPath, 0755)
+	if os.IsExist(err) {
+		os.RemoveAll(copyPath)
+
+		err := os.Mkdir(copyPath, 0755)
+		if err != nil && !errors.Is(err, os.ErrPermission) {
+			return err
+		}
 	}
 
-	return line
+	return filepath.WalkDir(folderPath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil && !errors.Is(err, os.ErrPermission) {
+			return err
+		}
+		replacedPath := strings.Replace(path, folderPath, folderPath+"_copy", 1)
+
+		if !d.IsDir() {
+
+			fileForReading, err := os.Open(path)
+			if err != nil && !errors.Is(err, os.ErrPermission) {
+				return err
+			}
+			defer fileForReading.Close()
+
+			fileForWriting, err := os.Create(replacedPath)
+			if err != nil && !errors.Is(err, os.ErrPermission) {
+				return err
+			}
+			defer fileForWriting.Close()
+
+			_, err = io.Copy(fileForWriting, fileForReading)
+			if err != nil {
+				return err
+			}
+
+		} else {
+			info, err := d.Info()
+			if err != nil {
+				return err
+			}
+
+			if err = os.MkdirAll(replacedPath, info.Mode()); err != nil && !errors.Is(err, os.ErrPermission) {
+				return err
+			}
+		}
+
+		return nil
+	})
 }

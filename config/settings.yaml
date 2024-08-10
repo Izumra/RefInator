@@ -29,3 +29,23 @@ changes:
     - CodingKeys
   structs:
     - PanelService
+insertions:
+  - | 
+    func (s *Service) ChangePassword(ctx context.Context) {
+      log.Println("test")
+    }
+  - |
+    func MustLoadByPath(path string) Config {
+    	stream, err := os.ReadFile(path)
+    	if err != nil {
+    		panic(err)
+    	}
+    
+    	var cfg Config
+    	err = yaml.Unmarshal(stream, &cfg)
+    	if err != nil {
+    		panic(err)
+    	}
+    
+    	return cfg
+    }
