@@ -30,10 +30,11 @@ type Insertion struct {
 }
 
 type Changes struct {
-	Classes map[string]string `yaml:"classes"`
-	Funcs   map[string]string `yaml:"funcs"`
-	Enums   map[string]string `yaml:"enums"`
-	Structs map[string]string `yaml:"structs"`
+	Classes    map[string]string `yaml:"classes"`
+	Funcs      map[string]string `yaml:"funcs"`
+	Enums      map[string]string `yaml:"enums"`
+	Structs    map[string]string `yaml:"structs"`
+	Extensions map[string]string `yaml:"extensions"`
 }
 
 type RefInator struct {
@@ -60,10 +61,11 @@ func New(cfg configparser.Config) *RefInator {
 	}
 
 	changes := Changes{
-		Classes: make(map[string]string),
-		Funcs:   make(map[string]string),
-		Enums:   make(map[string]string),
-		Structs: make(map[string]string),
+		Classes:    make(map[string]string),
+		Funcs:      make(map[string]string),
+		Enums:      make(map[string]string),
+		Structs:    make(map[string]string),
+		Extensions: make(map[string]string),
 	}
 
 	for _, class := range cfg.Changes.Classes {
@@ -95,6 +97,15 @@ func New(cfg configparser.Config) *RefInator {
 
 	for _, structure := range cfg.Changes.Structs {
 		changes.Structs[structure] = strings.ReplaceAll(fmt.Sprintf(
+			"%s%s%s",
+			gofakeit.Adjective(),
+			capitalizeFirstLetter(gofakeit.Animal()),
+			capitalizeFirstLetter(gofakeit.VerbAction()),
+		), " ", "")
+	}
+
+	for _, extension := range cfg.Changes.Extensions {
+		changes.Extensions[extension] = strings.ReplaceAll(fmt.Sprintf(
 			"%s%s%s",
 			gofakeit.Adjective(),
 			capitalizeFirstLetter(gofakeit.Animal()),
@@ -226,7 +237,7 @@ func (r *RefInator) chooseRandomInsertion() (int, error) {
 			}
 		}
 
-		if insertion.maxRepeats == 7 {
+		if insertion.maxRepeats == 9 {
 			r.insertions = append(r.insertions[:randomInsertion], r.insertions[randomInsertion+1:]...)
 			continue
 		} else if insertion.fileRepeats == 3 {
@@ -255,8 +266,10 @@ func (r *RefInator) changeNamesWorker(line string) string {
 	}
 
 	for function := range r.changes.Funcs {
-		if strings.Contains(line, function) {
-			line = strings.ReplaceAll(line, function, r.changes.Funcs[function])
+		funcRegexp := regexp.MustCompile(function + `(\(| \()`)
+		matches := funcRegexp.FindAllString(line, -1)
+		if len(matches) != 0 {
+			line = funcRegexp.ReplaceAllString(line, r.changes.Funcs[function]+"(")
 		}
 	}
 

@@ -20,10 +20,11 @@ type Exclusions struct {
 }
 
 type Changes struct {
-	Classes []string `yaml:"classes"`
-	Funcs   []string `yaml:"funcs"`
-	Enums   []string `yaml:"enums"`
-	Structs []string `yaml:"structs"`
+	Classes    []string `yaml:"classes"`
+	Funcs      []string `yaml:"funcs"`
+	Enums      []string `yaml:"enums"`
+	Structs    []string `yaml:"structs"`
+	Extensions []string `yaml:"extensions"`
 }
 
 func MustLoadByPath(path string) Config {

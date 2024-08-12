@@ -29,6 +29,7 @@ changes:
     - CodingKeys
   structs:
     - PanelService
+  extensios:
 insertions:
   - | 
     func (s *Service) ChangePassword(ctx context.Context) {
