@@ -237,7 +237,7 @@ func (r *RefInator) chooseRandomInsertion() (int, error) {
 			}
 		}
 
-		if insertion.maxRepeats == 8 {
+		if insertion.maxRepeats == 7 {
 			r.insertions = append(r.insertions[:randomInsertion], r.insertions[randomInsertion+1:]...)
 			continue
 		} else if insertion.fileRepeats == 3 {
