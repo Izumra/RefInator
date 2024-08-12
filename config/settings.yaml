@@ -11,14 +11,14 @@ exclusions:
     - .html
     - .git
   files:
-    - uploads/mark/BotConstructor/gen/user/account_grpc.pb.go
-    - uploads/mark/BotConstructor/gen/user/account.pb.go
-    - uploads/mark/BotConstructor/gen/user/auth_grpc.pb.go
-    - uploads/mark/BotConstructor/gen/user/auth.pb.go
+    - uploads/mark/BotConstructor_copy/gen/user/account_grpc.pb.go
+    - uploads/mark/BotConstructor_copy/gen/user/account.pb.go
+    - uploads/mark/BotConstructor_copy/gen/user/auth_grpc.pb.go
+    - uploads/mark/BotConstructor_copy/gen/user/auth.pb.go
   folders:
-    - uploads/mark/BotConstructor/.git
-    - uploads/mark/BotConstructor/client/dist/node_modules
-    - uploads/mark/BotConstructor/client/dist
+    - uploads/mark/BotConstructor_copy/.git
+    - uploads/mark/BotConstructor_copy/client/dist/node_modules
+    - uploads/mark/BotConstructor_copy/client/dist
 changes:
   classes: 
     - LopngPlerUIView_ThorfApplic

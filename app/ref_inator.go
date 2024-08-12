@@ -85,7 +85,7 @@ func New(cfg configparser.Config) *RefInator {
 	insertions := make([]Insertion, len(cfg.Insertions))
 	for ind, code := range cfg.Insertions {
 		insertion := Insertion{}
-		insertion.text = code + "\n"
+		insertion.text = strings.ReplaceAll(code, "\n", "\n\t") + "\n"
 
 		insertions[ind] = insertion
 	}
@@ -109,21 +109,11 @@ func (r *RefInator) Refactor(folderPath string) error {
 			return nil
 		}
 
-		afterPath, _ := strings.CutPrefix(path, folderPath)
-
 		if !d.IsDir() {
 
 			ext := filepath.Ext(path)
 			if _, ok := r.excExts[ext]; ok {
 				return nil
-			}
-
-			newName := gofakeit.AppName() + ext
-			pathWithoutFileName, _ := strings.CutSuffix(afterPath, "/"+d.Name())
-			path = folderPath + pathWithoutFileName + "/" + newName
-			err = os.Rename(folderPath+afterPath, path)
-			if err != nil {
-				log.Println(err)
 			}
 
 			fileReader, err := os.Open(path)
@@ -164,7 +154,7 @@ func (r *RefInator) Refactor(folderPath string) error {
 			for i := range lines {
 				if errChooseInsertion == nil && i != 0 {
 					if regexp.FindString(lines[i-1]) != "" {
-						if _, err := writer.WriteString(r.insertions[idInsertion].text); err == nil {
+						if _, err := writer.WriteString("\t" + r.insertions[idInsertion].text); err == nil {
 							r.insertions[idInsertion].fileRepeats++
 							r.insertions[idInsertion].maxRepeats++
 
