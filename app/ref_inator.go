@@ -67,12 +67,12 @@ func New(cfg configparser.Config) *RefInator {
 	}
 
 	for _, class := range cfg.Changes.Classes {
-		changes.Classes[class] = fmt.Sprintf(
+		changes.Classes[class] = strings.ReplaceAll(fmt.Sprintf(
 			"%s%s%s",
-			capitalizeFirstLetter(gofakeit.Adjective()),
+			gofakeit.Adjective(),
 			capitalizeFirstLetter(gofakeit.Animal()),
 			capitalizeFirstLetter(gofakeit.VerbAction()),
-		)
+		), " ", "")
 	}
 
 	for _, function := range cfg.Changes.Funcs {
