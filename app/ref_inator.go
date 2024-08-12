@@ -194,7 +194,7 @@ func (r *RefInator) chooseRandomInsertion() (int, error) {
 		randomInsertion := rand.IntN(len(r.insertions))
 		insertion = r.insertions[randomInsertion]
 
-		if insertion.maxRepeats == 9 {
+		if insertion.maxRepeats == 5 {
 			r.insertions = append(r.insertions[:randomInsertion], r.insertions[randomInsertion+1:]...)
 			continue
 		} else if insertion.fileRepeats == 3 {
