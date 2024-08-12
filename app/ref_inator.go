@@ -3,6 +3,7 @@ package app
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"log"
@@ -11,6 +12,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"unicode"
 
 	configparser "github.com/Izumra/RefInator/utils/config_parser"
 	"github.com/brianvoe/gofakeit/v7"
@@ -65,19 +67,39 @@ func New(cfg configparser.Config) *RefInator {
 	}
 
 	for _, class := range cfg.Changes.Classes {
-		changes.Classes[class] = gofakeit.Username()
+		changes.Classes[class] = fmt.Sprintf(
+			"%s%s%s",
+			capitalizeFirstLetter(gofakeit.Adjective()),
+			capitalizeFirstLetter(gofakeit.Animal()),
+			capitalizeFirstLetter(gofakeit.VerbAction()),
+		)
 	}
 
 	for _, function := range cfg.Changes.Funcs {
-		changes.Funcs[function] = gofakeit.Username()
+		changes.Funcs[function] = strings.ReplaceAll(fmt.Sprintf(
+			"%s%s%s",
+			gofakeit.Adjective(),
+			capitalizeFirstLetter(gofakeit.Animal()),
+			capitalizeFirstLetter(gofakeit.VerbAction()),
+		), " ", "")
 	}
 
 	for _, enum := range cfg.Changes.Enums {
-		changes.Enums[enum] = gofakeit.Username()
+		changes.Enums[enum] = strings.ReplaceAll(fmt.Sprintf(
+			"%s%s%s",
+			gofakeit.Adjective(),
+			capitalizeFirstLetter(gofakeit.Animal()),
+			capitalizeFirstLetter(gofakeit.VerbAction()),
+		), " ", "")
 	}
 
 	for _, structure := range cfg.Changes.Structs {
-		changes.Structs[structure] = gofakeit.Username()
+		changes.Structs[structure] = strings.ReplaceAll(fmt.Sprintf(
+			"%s%s%s",
+			gofakeit.Adjective(),
+			capitalizeFirstLetter(gofakeit.Animal()),
+			capitalizeFirstLetter(gofakeit.VerbAction()),
+		), " ", "")
 	}
 
 	refInator.changes = changes
@@ -194,7 +216,17 @@ func (r *RefInator) chooseRandomInsertion() (int, error) {
 		randomInsertion := rand.IntN(len(r.insertions))
 		insertion = r.insertions[randomInsertion]
 
-		if insertion.maxRepeats == 5 {
+		rarestInsert := insertion
+
+		for _, insert := range r.insertions {
+			if insert.fileRepeats != 3 {
+				if insert.maxRepeats < rarestInsert.maxRepeats {
+					rarestInsert = insert
+				}
+			}
+		}
+
+		if insertion.maxRepeats == 7 {
 			r.insertions = append(r.insertions[:randomInsertion], r.insertions[randomInsertion+1:]...)
 			continue
 		} else if insertion.fileRepeats == 3 {
@@ -203,6 +235,8 @@ func (r *RefInator) chooseRandomInsertion() (int, error) {
 				return -1, ErrManyTries
 			}
 
+			continue
+		} else if insertion.text != rarestInsert.text {
 			continue
 		}
 
@@ -291,4 +325,17 @@ func (r *RefInator) MakeFolderCopy(folderPath string) error {
 
 		return nil
 	})
+}
+
+func capitalizeFirstLetter(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	runes := []rune(s)
+	for i := range runes {
+		if i == 0 || !unicode.IsLetter(runes[i-1]) {
+			runes[i] = unicode.ToUpper(runes[i])
+		}
+	}
+	return string(runes)
 }
