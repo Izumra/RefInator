@@ -190,7 +190,7 @@ func (r *RefInator) Refactor(folderPath string) error {
 			for i := range lines {
 				if errChooseInsertion == nil && i != 0 {
 					if regexp.FindString(lines[i-1]) != "" {
-						for _, funcForInsert := range r.funcsToInsert {
+						for _, funcForInsert := range r.changes.Funcs {
 							if strings.Contains(lines[i-1], funcForInsert) {
 								if _, err := writer.WriteString("\t" + r.insertions[idInsertion].text); err == nil {
 									r.insertions[idInsertion].fileRepeats++
