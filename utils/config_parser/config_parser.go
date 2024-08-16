@@ -7,11 +7,10 @@ import (
 )
 
 type Config struct {
-	Exclusions    Exclusions `yaml:"exclusions"`
-	Changes       Changes    `yaml:"changes"`
-	FolderPath    string     `yaml:"folder_path"`
-	Insertions    []string   `yaml:"insertions"`
-	FuncsToInsert []string   `yaml:"funcs_to_insert"`
+	Exclusions Exclusions `yaml:"exclusions"`
+	Changes    Changes    `yaml:"changes"`
+	FolderPath string     `yaml:"folder_path"`
+	Insertions []string   `yaml:"insertions"`
 }
 
 type Exclusions struct {

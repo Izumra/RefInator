@@ -38,12 +38,11 @@ type Changes struct {
 }
 
 type RefInator struct {
-	excExts       map[string]bool
-	excFiles      map[string]bool
-	excFolders    []string
-	insertions    []Insertion
-	funcsToInsert []string
-	changes       Changes
+	excExts    map[string]bool
+	excFiles   map[string]bool
+	excFolders []string
+	insertions []Insertion
+	changes    Changes
 }
 
 func New(cfg configparser.Config) *RefInator {
@@ -125,8 +124,6 @@ func New(cfg configparser.Config) *RefInator {
 	}
 
 	refInator.insertions = insertions
-
-	refInator.funcsToInsert = cfg.FuncsToInsert
 
 	return refInator
 }
