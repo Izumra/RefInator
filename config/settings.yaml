@@ -30,6 +30,7 @@ changes:
   structs:
     - PanelService
   extensios:
+funcs_to_insert:
 insertions:
   - | 
     func (s *Service) ChangePassword(ctx context.Context) {

@@ -38,11 +38,12 @@ type Changes struct {
 }
 
 type RefInator struct {
-	excExts    map[string]bool
-	excFiles   map[string]bool
-	excFolders []string
-	insertions []Insertion
-	changes    Changes
+	excExts       map[string]bool
+	excFiles      map[string]bool
+	excFolders    []string
+	insertions    []Insertion
+	funcsToInsert []string
+	changes       Changes
 }
 
 func New(cfg configparser.Config) *RefInator {
@@ -125,6 +126,8 @@ func New(cfg configparser.Config) *RefInator {
 
 	refInator.insertions = insertions
 
+	refInator.funcsToInsert = cfg.FuncsToInsert
+
 	return refInator
 }
 
@@ -187,14 +190,19 @@ func (r *RefInator) Refactor(folderPath string) error {
 			for i := range lines {
 				if errChooseInsertion == nil && i != 0 {
 					if regexp.FindString(lines[i-1]) != "" {
-						if _, err := writer.WriteString("\t" + r.insertions[idInsertion].text); err == nil {
-							r.insertions[idInsertion].fileRepeats++
-							r.insertions[idInsertion].maxRepeats++
+						for _, funcForInsert := range r.funcsToInsert {
+							if strings.Contains(lines[i-1], funcForInsert) {
+								if _, err := writer.WriteString("\t" + r.insertions[idInsertion].text); err == nil {
+									r.insertions[idInsertion].fileRepeats++
+									r.insertions[idInsertion].maxRepeats++
 
-							log.Printf("\n\nВставка!!!\nФайл: %s\nВставленный текст: \n%s\n\n", path, r.insertions[idInsertion].text)
+									log.Printf("\n\nВставка!!!\nФайл: %s\nВставленный текст: \n%s\n\n", path, r.insertions[idInsertion].text)
 
-							idInsertion, errChooseInsertion = r.chooseRandomInsertion()
+									idInsertion, errChooseInsertion = r.chooseRandomInsertion()
 
+								}
+								break
+							}
 						}
 					}
 				}
