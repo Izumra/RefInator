@@ -29,7 +29,8 @@ changes:
     - CodingKeys
   structs:
     - PanelService
-  extensios:
+  extensions:
+    - String_ThorphinApp
 insertions:
   - | 
     func (s *Service) ChangePassword(ctx context.Context) {
